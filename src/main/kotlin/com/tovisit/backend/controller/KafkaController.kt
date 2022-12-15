@@ -4,6 +4,7 @@ import com.tovisit.backend.model.Searched
 import lombok.extern.slf4j.Slf4j
 import org.jboss.logging.Logger
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.SendResult
@@ -21,14 +22,12 @@ import java.net.InetAddress
 @Slf4j
 class KafkaController(
     @Autowired
-    private val kafkaTemplate: KafkaTemplate<String, Searched>
+    private val kafkaTemplate: KafkaTemplate<String, Searched>,
+    @Value("\${kafka.topic}")
+    private val TOPIC: String
 ) {
 
     val log: Logger = Logger.getLogger(this.javaClass)
-
-    companion object {
-        private const val TOPIC = "KafkaDemo";
-    }
 
     @GetMapping("/send")
     fun add(@RequestParam("place") place: String): ResponseEntity<String> {
@@ -44,12 +43,5 @@ class KafkaController(
         }
         return ResponseEntity.ok(returnMsg)
     }
-
-    //    @GetMapping("/retrieve")
-//    @KafkaListener(topics = [TOPIC], groupId = "test_id")
-//    fun consume(message: String): Unit {
-//        log.info(" message received from topic $message")
-//    }
-
 
 }
