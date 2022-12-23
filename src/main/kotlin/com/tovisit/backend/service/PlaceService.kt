@@ -27,17 +27,17 @@ class PlaceService(val placeRepository: PlaceRepository) {
 
     fun update(updatedPlace: Place): Boolean {
         val place = placeRepository.findById(updatedPlace.id)
-        if (place.isPresent) {
+        return if (place.isPresent) {
             place.map {
                 it.city = updatedPlace.city
                 it.attraction = updatedPlace.attraction
                 it.month = updatedPlace.month
             }
             placeRepository.save(place.get())
-            return true
+            true
         } else {
             log.info("place not found ")
-            return false
+            false
         }
     }
 

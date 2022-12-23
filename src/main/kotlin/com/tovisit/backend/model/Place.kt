@@ -19,7 +19,6 @@ class Place(
     var month: String,
     var other: String? = null
 
-
 ) {
     override fun toString(): String {
         return "Place(id=$id, city='$city', attraction='$attraction', month='$month', other=$other)"

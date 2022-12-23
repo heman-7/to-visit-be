@@ -1,18 +1,34 @@
 package com.tovisit.backend.controller
 
 import com.tovisit.backend.model.Place
+import com.tovisit.backend.model.Searched
 import com.tovisit.backend.service.PlaceService
+import com.tovisit.backend.service.RecommendationService
 import org.jboss.logging.Logger
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.kafka.support.SendResult
+import org.springframework.util.concurrent.ListenableFuture
 import org.springframework.web.bind.annotation.*
+import java.net.InetAddress
+import java.time.Instant
 import java.util.*
 import kotlin.collections.HashMap
 
 @RestController
 @RequestMapping("/place")
 @CrossOrigin(origins = ["http://localhost:3000"])
-class PlaceController(val placeService: PlaceService) {
+class PlaceController(
+    val placeService: PlaceService,
+    val recommendationService: RecommendationService,
+    @Autowired
+    private val kafkaTemplate: KafkaTemplate<String, Searched>,
+    @Value("\${kafka.topic}")
+    private val TOPIC: String
+) {
 
     val log: Logger = Logger.getLogger(this.javaClass)
 
@@ -88,4 +104,30 @@ class PlaceController(val placeService: PlaceService) {
             ResponseEntity.status(HttpStatus.NOT_FOUND).body(" Place Not found")
         }
     }
+
+    @GetMapping("/search")
+    fun search(@RequestParam("place") place: String): ResponseEntity<String> {
+        var returnMsg = "";
+        try {
+            val searched = Searched(
+                city = place,
+                sourceIP = InetAddress.getLocalHost().hostAddress,
+                searchedAt = Instant.now().toEpochMilli()
+            )
+            val lf: ListenableFuture<SendResult<String, Searched>> = kafkaTemplate.send(TOPIC, searched)
+            val sendResult: SendResult<String, Searched> = lf.get()
+            returnMsg = sendResult.producerRecord.value().city + " send to topic"
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            log.info(" exception occurred " + ex.message)
+        }
+        return ResponseEntity.ok(returnMsg)
+    }
+
+    @GetMapping("/recommendations")
+    fun recommendations(): ResponseEntity<Any> {
+        val recommendations = recommendationService.fetch()
+        return ResponseEntity.ok(recommendations)
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.tovisit.backend.model
 
 data class Searched(
-    val place: String,
-    val sourceIP: String
+    val city: String,
+    val sourceIP: String,
+    val searchedAt: Long
 )
