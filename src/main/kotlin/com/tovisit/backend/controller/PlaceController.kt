@@ -4,6 +4,10 @@ import com.tovisit.backend.model.Place
 import com.tovisit.backend.model.Searched
 import com.tovisit.backend.service.PlaceService
 import com.tovisit.backend.service.RecommendationService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jboss.logging.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -16,7 +20,6 @@ import org.springframework.web.bind.annotation.*
 import java.net.InetAddress
 import java.time.Instant
 import java.util.*
-import kotlin.collections.HashMap
 
 @RestController
 @RequestMapping("/place")
@@ -106,17 +109,27 @@ class PlaceController(
     }
 
     @GetMapping("/search")
-    fun search(@RequestParam("place") place: String): ResponseEntity<String> {
+    suspend fun search(@RequestParam("place") place: String): ResponseEntity<String> {
         var returnMsg = "";
         try {
             val searched = Searched(
                 city = place,
-                sourceIP = InetAddress.getLocalHost().hostAddress,
+                sourceIP = withContext(Dispatchers.IO) {
+                    InetAddress.getLocalHost()
+                }.hostAddress,
                 searchedAt = Instant.now().toEpochMilli()
             )
-            val lf: ListenableFuture<SendResult<String, Searched>> = kafkaTemplate.send(TOPIC, searched)
-            val sendResult: SendResult<String, Searched> = lf.get()
-            returnMsg = sendResult.producerRecord.value().city + " send to topic"
+            //launch a separate coroutine
+            coroutineScope {
+                launch {
+                    val lf: ListenableFuture<SendResult<String, Searched>> = kafkaTemplate.send(TOPIC, searched)
+                    val sendResult: SendResult<String, Searched> =
+                        withContext(Dispatchers.IO) {
+                            lf.get()
+                        }
+                    returnMsg = sendResult.producerRecord.value().city + " send to topic"
+                }
+            }
         } catch (ex: Exception) {
             ex.printStackTrace()
             log.info(" exception occurred " + ex.message)

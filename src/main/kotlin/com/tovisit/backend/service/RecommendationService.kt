@@ -27,7 +27,7 @@ class RecommendationService(val recommendationRepository: RecommendationReposito
                 ips.add(searched.sourceIP)
                 it.sourceIps = ips.joinToString(",")
             }
-            log.info("updated existingRecommendation : $recommendation")
+            log.info("updated existingRecommendation : ${existingRecommendation.place}")
             recommendationRepository.save(existingRecommendation)
         } else {
             val newRecommendation = Recommendation(
@@ -36,13 +36,13 @@ class RecommendationService(val recommendationRepository: RecommendationReposito
                 lastSearchedAt = searched.searchedAt,
                 sourceIps = searched.sourceIP
             )
-            log.info("newRecommendation : $recommendation")
+            log.info("newRecommendation : ${newRecommendation.place}")
             recommendationRepository.save(newRecommendation)
         }
     }
 
     fun fetch(): List<Recommendation> {
-        return recommendationRepository.topSearched(3)
+        return recommendationRepository.topSearched(6)
     }
 
 }
