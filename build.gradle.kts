@@ -35,6 +35,7 @@ dependencies {
     implementation("org.springframework.kafka:spring-kafka:2.7.0")
     runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation("org.springframework.boot:spring-boot-starter-security:2.3.8.RELEASE")
 }
 
 tasks.withType<KotlinCompile> {
